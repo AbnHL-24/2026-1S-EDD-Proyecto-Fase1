@@ -14,9 +14,6 @@ bool ArbolAVL::insertar(const Producto& producto) {
     if (!producto.esValido()) {
         return false;
     }
-    if (buscarPorCodigo(producto.obtenerCodigoBarra()) != nullptr) {
-        return false;
-    }
 
     bool insertado = false;
     raiz_ = insertarRec(raiz_, producto, insertado);
@@ -26,54 +23,29 @@ bool ArbolAVL::insertar(const Producto& producto) {
     return insertado;
 }
 
-Producto* ArbolAVL::buscarPorNombre(const std::string& nombre) {
-    NodoAVL* encontrado = buscarNodoPorNombreRec(raiz_, nombre);
-    if (encontrado == nullptr) {
-        return nullptr;
-    }
-    return &encontrado->obtenerDato();
-}
-
-const Producto* ArbolAVL::buscarPorNombre(const std::string& nombre) const {
-    NodoAVL* encontrado = buscarNodoPorNombreRec(raiz_, nombre);
-    if (encontrado == nullptr) {
-        return nullptr;
-    }
-    return &encontrado->obtenerDato();
-}
-
-Producto* ArbolAVL::buscarPorCodigo(const std::string& codigoBarra) {
-    NodoAVL* encontrado = buscarNodoPorCodigoRec(raiz_, codigoBarra);
-    if (encontrado == nullptr) {
-        return nullptr;
-    }
-    return &encontrado->obtenerDato();
+const Producto* ArbolAVL::buscar(const std::string& nombre) const {
+    return buscarRec(raiz_, nombre);
 }
 
 const Producto* ArbolAVL::buscarPorCodigo(const std::string& codigoBarra) const {
-    NodoAVL* encontrado = buscarNodoPorCodigoRec(raiz_, codigoBarra);
-    if (encontrado == nullptr) {
-        return nullptr;
-    }
-    return &encontrado->obtenerDato();
+    return buscarPorCodigoRec(raiz_, codigoBarra);
 }
 
-bool ArbolAVL::eliminar(const std::string& codigoBarra) {
-    NodoAVL* encontrado = buscarNodoPorCodigoRec(raiz_, codigoBarra);
-    if (encontrado == nullptr) {
-        return false;
-    }
-
+bool ArbolAVL::eliminar(const std::string& nombre) {
     bool eliminado = false;
-    raiz_ = eliminarRec(raiz_, encontrado->obtenerDato().obtenerNombre(), codigoBarra, eliminado);
+    raiz_ = eliminarRec(raiz_, nombre, eliminado);
     if (eliminado) {
         --tamano_;
     }
     return eliminado;
 }
 
-void ArbolAVL::recorrerEnOrden(const std::function<void(const Producto&)>& callback) const {
-    recorrerEnOrdenRec(raiz_, callback);
+void ArbolAVL::recorrerInOrder(std::function<void(const Producto&)> callback) const {
+    if (!callback) {
+        return;
+    }
+
+    inOrderRec(raiz_, callback);
 }
 
 int ArbolAVL::obtenerTamano() const {
@@ -84,130 +56,26 @@ bool ArbolAVL::estaVacio() const {
     return raiz_ == nullptr;
 }
 
-NodoAVL* ArbolAVL::insertarRec(NodoAVL* nodo, const Producto& producto, bool& insertado) {
-    if (nodo == nullptr) {
-        insertado = true;
-        return new NodoAVL(producto);
-    }
-
-    const std::string& nombreNuevo = producto.obtenerNombre();
-    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
-
-    if (nombreNuevo < nombreActual) {
-        nodo->establecerIzquierdo(insertarRec(nodo->obtenerIzquierdo(), producto, insertado));
-    } else if (nombreActual < nombreNuevo) {
-        nodo->establecerDerecho(insertarRec(nodo->obtenerDerecho(), producto, insertado));
-    } else {
-        if (producto.obtenerCodigoBarra() < nodo->obtenerDato().obtenerCodigoBarra()) {
-            nodo->establecerIzquierdo(insertarRec(nodo->obtenerIzquierdo(), producto, insertado));
-        } else {
-            nodo->establecerDerecho(insertarRec(nodo->obtenerDerecho(), producto, insertado));
-        }
-    }
-
-    actualizarAltura(nodo);
-    return rebalancear(nodo);
+int ArbolAVL::obtenerAltura() const {
+    return altura(raiz_);
 }
 
-NodoAVL* ArbolAVL::eliminarRec(NodoAVL* nodo,
-                               const std::string& nombre,
-                               const std::string& codigoBarra,
-                               bool& eliminado) {
+int ArbolAVL::altura(NodoAVL* nodo) const {
     if (nodo == nullptr) {
-        return nullptr;
+        return -1;
     }
-
-    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
-    const std::string& codigoActual = nodo->obtenerDato().obtenerCodigoBarra();
-
-    if (nombre < nombreActual || (nombre == nombreActual && codigoBarra < codigoActual)) {
-        nodo->establecerIzquierdo(eliminarRec(nodo->obtenerIzquierdo(), nombre, codigoBarra, eliminado));
-    } else if (nombreActual < nombre || (nombre == nombreActual && codigoActual < codigoBarra)) {
-        nodo->establecerDerecho(eliminarRec(nodo->obtenerDerecho(), nombre, codigoBarra, eliminado));
-    } else {
-        eliminado = true;
-
-        if (nodo->obtenerIzquierdo() == nullptr && nodo->obtenerDerecho() == nullptr) {
-            delete nodo;
-            return nullptr;
-        }
-
-        if (nodo->obtenerIzquierdo() == nullptr) {
-            NodoAVL* derecho = nodo->obtenerDerecho();
-            delete nodo;
-            return derecho;
-        }
-
-        if (nodo->obtenerDerecho() == nullptr) {
-            NodoAVL* izquierdo = nodo->obtenerIzquierdo();
-            delete nodo;
-            return izquierdo;
-        }
-
-        NodoAVL* sucesor = obtenerMinimo(nodo->obtenerDerecho());
-        const std::string nombreSucesor = sucesor->obtenerDato().obtenerNombre();
-        const std::string codigoSucesor = sucesor->obtenerDato().obtenerCodigoBarra();
-
-        nodo->establecerDato(sucesor->obtenerDato());
-
-        bool eliminadoSucesor = false;
-        nodo->establecerDerecho(
-            eliminarRec(nodo->obtenerDerecho(), nombreSucesor, codigoSucesor, eliminadoSucesor));
-    }
-
-    actualizarAltura(nodo);
-    return rebalancear(nodo);
+    return nodo->obtenerAltura();
 }
 
-NodoAVL* ArbolAVL::buscarNodoPorNombreRec(NodoAVL* nodo, const std::string& nombre) const {
-    if (nodo == nullptr) {
-        return nullptr;
-    }
-
-    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
-    if (nombre == nombreActual) {
-        return nodo;
-    }
-    if (nombre < nombreActual) {
-        return buscarNodoPorNombreRec(nodo->obtenerIzquierdo(), nombre);
-    }
-    return buscarNodoPorNombreRec(nodo->obtenerDerecho(), nombre);
-}
-
-NodoAVL* ArbolAVL::buscarNodoPorCodigoRec(NodoAVL* nodo, const std::string& codigoBarra) const {
-    if (nodo == nullptr) {
-        return nullptr;
-    }
-    if (nodo->obtenerDato().obtenerCodigoBarra() == codigoBarra) {
-        return nodo;
-    }
-
-    NodoAVL* encontradoIzq = buscarNodoPorCodigoRec(nodo->obtenerIzquierdo(), codigoBarra);
-    if (encontradoIzq != nullptr) {
-        return encontradoIzq;
-    }
-    return buscarNodoPorCodigoRec(nodo->obtenerDerecho(), codigoBarra);
-}
-
-void ArbolAVL::recorrerEnOrdenRec(NodoAVL* nodo,
-                                  const std::function<void(const Producto&)>& callback) const {
+void ArbolAVL::actualizarAltura(NodoAVL* nodo) {
     if (nodo == nullptr) {
         return;
     }
 
-    recorrerEnOrdenRec(nodo->obtenerIzquierdo(), callback);
-    callback(nodo->obtenerDato());
-    recorrerEnOrdenRec(nodo->obtenerDerecho(), callback);
-}
-
-void ArbolAVL::liberarRec(NodoAVL* nodo) {
-    if (nodo == nullptr) {
-        return;
-    }
-
-    liberarRec(nodo->obtenerIzquierdo());
-    liberarRec(nodo->obtenerDerecho());
-    delete nodo;
+    const int alturaIzquierda = altura(nodo->obtenerIzquierdo());
+    const int alturaDerecha = altura(nodo->obtenerDerecho());
+    const int mayorAltura = (alturaIzquierda > alturaDerecha) ? alturaIzquierda : alturaDerecha;
+    nodo->establecerAltura(mayorAltura + 1);
 }
 
 NodoAVL* ArbolAVL::rotarDerecha(NodoAVL* nodo) {
@@ -235,23 +103,100 @@ NodoAVL* ArbolAVL::rotarIzquierda(NodoAVL* nodo) {
 }
 
 NodoAVL* ArbolAVL::rebalancear(NodoAVL* nodo) {
-    const int balance = nodo->obtenerFactorBalance();
+    if (nodo == nullptr) {
+        return nullptr;
+    }
+
+    const int balance = altura(nodo->obtenerIzquierdo()) - altura(nodo->obtenerDerecho());
 
     if (balance > 1) {
-        if (nodo->obtenerIzquierdo() != nullptr && nodo->obtenerIzquierdo()->obtenerFactorBalance() < 0) {
+        const int balanceIzquierdo =
+            altura(nodo->obtenerIzquierdo()->obtenerIzquierdo()) -
+            altura(nodo->obtenerIzquierdo()->obtenerDerecho());
+
+        if (balanceIzquierdo < 0) {
             nodo->establecerIzquierdo(rotarIzquierda(nodo->obtenerIzquierdo()));
         }
         return rotarDerecha(nodo);
     }
 
     if (balance < -1) {
-        if (nodo->obtenerDerecho() != nullptr && nodo->obtenerDerecho()->obtenerFactorBalance() > 0) {
+        const int balanceDerecho =
+            altura(nodo->obtenerDerecho()->obtenerIzquierdo()) -
+            altura(nodo->obtenerDerecho()->obtenerDerecho());
+
+        if (balanceDerecho > 0) {
             nodo->establecerDerecho(rotarDerecha(nodo->obtenerDerecho()));
         }
         return rotarIzquierda(nodo);
     }
 
     return nodo;
+}
+
+NodoAVL* ArbolAVL::insertarRec(NodoAVL* nodo, const Producto& producto, bool& insertado) {
+    if (nodo == nullptr) {
+        insertado = true;
+        return new NodoAVL(producto);
+    }
+
+    const std::string& nombreNuevo = producto.obtenerNombre();
+    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
+
+    if (nombreNuevo < nombreActual) {
+        nodo->establecerIzquierdo(insertarRec(nodo->obtenerIzquierdo(), producto, insertado));
+    } else if (nombreActual < nombreNuevo) {
+        nodo->establecerDerecho(insertarRec(nodo->obtenerDerecho(), producto, insertado));
+    } else {
+        insertado = false;
+        return nodo;
+    }
+
+    actualizarAltura(nodo);
+    return rebalancear(nodo);
+}
+
+NodoAVL* ArbolAVL::eliminarRec(NodoAVL* nodo, const std::string& nombre, bool& eliminado) {
+    if (nodo == nullptr) {
+        return nullptr;
+    }
+
+    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
+
+    if (nombre < nombreActual) {
+        nodo->establecerIzquierdo(eliminarRec(nodo->obtenerIzquierdo(), nombre, eliminado));
+    } else if (nombreActual < nombre) {
+        nodo->establecerDerecho(eliminarRec(nodo->obtenerDerecho(), nombre, eliminado));
+    } else {
+        eliminado = true;
+
+        if (nodo->obtenerIzquierdo() == nullptr && nodo->obtenerDerecho() == nullptr) {
+            delete nodo;
+            return nullptr;
+        }
+
+        if (nodo->obtenerIzquierdo() == nullptr) {
+            NodoAVL* derecho = nodo->obtenerDerecho();
+            delete nodo;
+            return derecho;
+        }
+
+        if (nodo->obtenerDerecho() == nullptr) {
+            NodoAVL* izquierdo = nodo->obtenerIzquierdo();
+            delete nodo;
+            return izquierdo;
+        }
+
+        NodoAVL* sucesor = obtenerMinimo(nodo->obtenerDerecho());
+        const std::string nombreSucesor = sucesor->obtenerDato().obtenerNombre();
+        nodo->establecerDato(sucesor->obtenerDato());
+
+        bool eliminadoSucesor = false;
+        nodo->establecerDerecho(eliminarRec(nodo->obtenerDerecho(), nombreSucesor, eliminadoSucesor));
+    }
+
+    actualizarAltura(nodo);
+    return rebalancear(nodo);
 }
 
 NodoAVL* ArbolAVL::obtenerMinimo(NodoAVL* nodo) const {
@@ -262,20 +207,54 @@ NodoAVL* ArbolAVL::obtenerMinimo(NodoAVL* nodo) const {
     return actual;
 }
 
-int ArbolAVL::obtenerAltura(NodoAVL* nodo) const {
+const Producto* ArbolAVL::buscarRec(NodoAVL* nodo, const std::string& nombre) const {
     if (nodo == nullptr) {
-        return 0;
+        return nullptr;
     }
-    return nodo->obtenerAltura();
+
+    const std::string& nombreActual = nodo->obtenerDato().obtenerNombre();
+    if (nombre == nombreActual) {
+        return &nodo->obtenerDato();
+    }
+    if (nombre < nombreActual) {
+        return buscarRec(nodo->obtenerIzquierdo(), nombre);
+    }
+    return buscarRec(nodo->obtenerDerecho(), nombre);
 }
 
-void ArbolAVL::actualizarAltura(NodoAVL* nodo) {
+const Producto* ArbolAVL::buscarPorCodigoRec(NodoAVL* nodo, const std::string& codigoBarra) const {
+    if (nodo == nullptr) {
+        return nullptr;
+    }
+
+    const Producto* encontradoIzquierda = buscarPorCodigoRec(nodo->obtenerIzquierdo(), codigoBarra);
+    if (encontradoIzquierda != nullptr) {
+        return encontradoIzquierda;
+    }
+
+    if (nodo->obtenerDato().obtenerCodigoBarra() == codigoBarra) {
+        return &nodo->obtenerDato();
+    }
+
+    return buscarPorCodigoRec(nodo->obtenerDerecho(), codigoBarra);
+}
+
+void ArbolAVL::inOrderRec(NodoAVL* nodo, std::function<void(const Producto&)>& callback) const {
     if (nodo == nullptr) {
         return;
     }
 
-    const int alturaIzquierda = obtenerAltura(nodo->obtenerIzquierdo());
-    const int alturaDerecha = obtenerAltura(nodo->obtenerDerecho());
-    const int mayorAltura = (alturaIzquierda > alturaDerecha) ? alturaIzquierda : alturaDerecha;
-    nodo->establecerAltura(mayorAltura + 1);
+    inOrderRec(nodo->obtenerIzquierdo(), callback);
+    callback(nodo->obtenerDato());
+    inOrderRec(nodo->obtenerDerecho(), callback);
+}
+
+void ArbolAVL::liberarRec(NodoAVL* nodo) {
+    if (nodo == nullptr) {
+        return;
+    }
+
+    liberarRec(nodo->obtenerIzquierdo());
+    liberarRec(nodo->obtenerDerecho());
+    delete nodo;
 }
