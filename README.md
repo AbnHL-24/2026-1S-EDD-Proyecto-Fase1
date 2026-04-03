@@ -50,6 +50,12 @@ o
 6. Ver estado de estructuras
 7. Cargar 1000 datos quemados para pruebas
 
+## Documentacion
+
+- Manual de usuario: `docs/manual_usuario.md`
+- Documentacion tecnica: `docs/documentacion_tecnica.md`
+- Reporte tecnico (fase actual): `docs/report.md`
+
 ## Notas tecnicas
 
 - Unicidad en AVL por `codigoBarra`.
