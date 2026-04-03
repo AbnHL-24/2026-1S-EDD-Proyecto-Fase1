@@ -7,6 +7,7 @@ add_executable(src
     main.cpp
     src/ListaEnlazada.cpp
     src/ListaEnlazadaOrdenada.cpp
+    src/ArbolAVL.cpp
 )
 
 target_include_directories(src PRIVATE include)

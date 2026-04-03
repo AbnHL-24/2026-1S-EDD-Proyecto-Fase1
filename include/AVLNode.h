@@ -23,6 +23,13 @@ public:
     /**
      * @brief Retorna el dato del nodo.
      */
+    Producto& obtenerDato() {
+        return dato;
+    }
+
+    /**
+     * @brief Retorna el dato del nodo (solo lectura).
+     */
     const Producto& obtenerDato() const {
         return dato;
     }
