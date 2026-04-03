@@ -89,7 +89,7 @@ public:
 
     /**
      * @brief Inserta un producto por nombre con rebalanceo AVL.
-     * @return true si inserta; false si el producto no es valido o el nombre ya existe.
+     * @return true si inserta; false si el producto no es valido o el codigo ya existe.
      * @note Complejidad esperada: O(log n).
      */
     bool insertar(const Producto& producto);

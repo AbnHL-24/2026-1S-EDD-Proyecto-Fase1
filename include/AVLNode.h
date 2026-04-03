@@ -14,10 +14,10 @@ private:
 
 public:
     /**
-     * @brief Construye un nodo AVL con altura inicial 1.
+     * @brief Construye un nodo AVL con altura inicial 0.
      */
     explicit NodoAVL(const Producto& dato)
-        : dato(dato), izquierdo(nullptr), derecho(nullptr), altura(1) {
+        : dato(dato), izquierdo(nullptr), derecho(nullptr), altura(0) {
     }
 
     /**
@@ -87,8 +87,8 @@ public:
      * @brief Calcula el factor de balance: altura(izq) - altura(der).
      */
     int obtenerFactorBalance() const {
-        const int alturaIzquierda = (izquierdo == nullptr) ? 0 : izquierdo->altura;
-        const int alturaDerecha = (derecho == nullptr) ? 0 : derecho->altura;
+        const int alturaIzquierda = (izquierdo == nullptr) ? -1 : izquierdo->altura;
+        const int alturaDerecha = (derecho == nullptr) ? -1 : derecho->altura;
         return alturaIzquierda - alturaDerecha;
     }
 };

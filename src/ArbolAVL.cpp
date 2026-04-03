@@ -14,6 +14,9 @@ bool ArbolAVL::insertar(const Producto& producto) {
     if (!producto.esValido()) {
         return false;
     }
+    if (buscarPorCodigo(producto.obtenerCodigoBarra()) != nullptr) {
+        return false;
+    }
 
     bool insertado = false;
     raiz_ = insertarRec(raiz_, producto, insertado);
