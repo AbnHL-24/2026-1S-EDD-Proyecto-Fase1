@@ -7,6 +7,8 @@
 #include "ListaEnlazadaOrdenada.h"
 
 namespace {
+int siguienteIdSemilla = 1;
+
 void limpiarEntrada() {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -60,6 +62,72 @@ Producto leerProductoDesdeConsola() {
     return Producto(nombre, codigoBarra, categoria, fechaCaducidad, marca, precio, stock);
 }
 
+bool insertarEnEstructuras(const Producto& producto,
+                           ListaEnlazada& listaNoOrdenada,
+                           ListaEnlazadaOrdenada& listaOrdenada,
+                           ArbolAVL& arbol) {
+    if (!producto.esValido()) {
+        return false;
+    }
+
+    if (arbol.buscarPorCodigo(producto.obtenerCodigoBarra()) != nullptr) {
+        return false;
+    }
+
+    if (!listaNoOrdenada.insertarAlFrente(producto)) {
+        return false;
+    }
+
+    if (!listaOrdenada.insertarOrdenado(producto)) {
+        listaNoOrdenada.eliminar(producto.obtenerCodigoBarra());
+        return false;
+    }
+
+    if (!arbol.insertar(producto)) {
+        listaNoOrdenada.eliminar(producto.obtenerCodigoBarra());
+        listaOrdenada.eliminar(producto.obtenerCodigoBarra());
+        return false;
+    }
+
+    return true;
+}
+
+void cargarDatosQuemados(ListaEnlazada& listaNoOrdenada,
+                         ListaEnlazadaOrdenada& listaOrdenada,
+                         ArbolAVL& arbol) {
+    static const std::string categorias[] = {"Despensa", "Bebidas", "Lacteos", "Limpieza", "Congelados"};
+    static const std::string marcas[] = {"MarcaA", "MarcaB", "MarcaC", "MarcaD", "MarcaE"};
+
+    int insertados = 0;
+    int fallidos = 0;
+
+    for (int i = 0; i < 1000; ++i) {
+        const int id = siguienteIdSemilla++;
+
+        const std::string nombre = "ProductoSemilla" + std::to_string(id);
+        const std::string codigo = "SEM" + std::to_string(100000 + id);
+        const std::string categoria = categorias[id % 5];
+        const int mes = (id % 12) + 1;
+        const int dia = (id % 28) + 1;
+        const std::string fecha =
+            "2027-" + std::string((mes < 10) ? "0" : "") + std::to_string(mes) + "-" +
+            std::string((dia < 10) ? "0" : "") + std::to_string(dia);
+        const std::string marca = marcas[id % 5];
+        const double precio = 5.0 + static_cast<double>(id % 250) / 10.0;
+        const int stock = 10 + (id % 400);
+
+        const Producto producto(nombre, codigo, categoria, fecha, marca, precio, stock);
+        if (insertarEnEstructuras(producto, listaNoOrdenada, listaOrdenada, arbol)) {
+            ++insertados;
+        } else {
+            ++fallidos;
+        }
+    }
+
+    std::cout << "Carga semilla finalizada. Insertados: " << insertados
+              << " | Fallidos: " << fallidos << '\n';
+}
+
 void mostrarMenu() {
     std::cout << "\n===== Mini Catalogo (Listas + AVL) =====\n";
     std::cout << "1. Agregar producto\n";
@@ -68,6 +136,7 @@ void mostrarMenu() {
     std::cout << "4. Eliminar producto por codigo\n";
     std::cout << "5. Listar catalogo ordenado (AVL in-order)\n";
     std::cout << "6. Ver estado de estructuras\n";
+    std::cout << "7. Cargar 1000 datos quemados\n";
     std::cout << "0. Salir\n";
     std::cout << "Seleccione opcion: ";
 }
@@ -93,31 +162,8 @@ int main() {
             std::cout << "\n--- Agregar producto ---\n";
             const Producto producto = leerProductoDesdeConsola();
 
-            if (!producto.esValido()) {
-                std::cout << "Producto invalido. Revise campos y formato de fecha.\n";
-                continue;
-            }
-
-            if (arbol.buscarPorCodigo(producto.obtenerCodigoBarra()) != nullptr) {
-                std::cout << "Ya existe un producto con ese codigo de barras.\n";
-                continue;
-            }
-
-            if (!listaNoOrdenada.insertarAlFrente(producto)) {
-                std::cout << "Fallo al insertar en lista no ordenada.\n";
-                continue;
-            }
-
-            if (!listaOrdenada.insertarOrdenado(producto)) {
-                listaNoOrdenada.eliminar(producto.obtenerCodigoBarra());
-                std::cout << "Fallo al insertar en lista ordenada. Se aplico rollback.\n";
-                continue;
-            }
-
-            if (!arbol.insertar(producto)) {
-                listaNoOrdenada.eliminar(producto.obtenerCodigoBarra());
-                listaOrdenada.eliminar(producto.obtenerCodigoBarra());
-                std::cout << "Fallo al insertar en AVL. Se aplico rollback.\n";
+            if (!insertarEnEstructuras(producto, listaNoOrdenada, listaOrdenada, arbol)) {
+                std::cout << "No se pudo insertar. Valide datos o duplicados por codigo/nombre.\n";
                 continue;
             }
 
@@ -203,6 +249,9 @@ int main() {
             std::cout << "Tamano lista ordenada: " << listaOrdenada.obtenerTamano() << '\n';
             std::cout << "Tamano AVL: " << arbol.obtenerTamano() << '\n';
             std::cout << "Altura AVL: " << arbol.obtenerAltura() << '\n';
+        } else if (opcion == 7) {
+            std::cout << "\nCargando 1000 datos quemados...\n";
+            cargarDatosQuemados(listaNoOrdenada, listaOrdenada, arbol);
         } else if (opcion == 0) {
             std::cout << "Saliendo...\n";
         } else {
