@@ -3,4 +3,10 @@ project(src)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(src main.cpp)
+add_executable(src
+    main.cpp
+    src/ListaEnlazada.cpp
+    src/ListaEnlazadaOrdenada.cpp
+)
+
+target_include_directories(src PRIVATE include)

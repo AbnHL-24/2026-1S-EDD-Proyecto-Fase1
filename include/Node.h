@@ -20,6 +20,13 @@ public:
     /**
      * @brief Retorna el dato almacenado.
      */
+    T& obtenerDato() {
+        return dato;
+    }
+
+    /**
+     * @brief Retorna el dato almacenado (solo lectura).
+     */
     const T& obtenerDato() const {
         return dato;
     }
@@ -34,7 +41,14 @@ public:
     /**
      * @brief Retorna el puntero al siguiente nodo.
      */
-    Nodo<T>* obtenerSiguiente() const {
+    Nodo<T>* obtenerSiguiente() {
+        return siguiente;
+    }
+
+    /**
+     * @brief Retorna el puntero al siguiente nodo (solo lectura).
+     */
+    const Nodo<T>* obtenerSiguiente() const {
         return siguiente;
     }
 
